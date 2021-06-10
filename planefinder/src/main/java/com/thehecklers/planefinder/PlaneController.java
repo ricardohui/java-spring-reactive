@@ -3,8 +3,10 @@ package com.thehecklers.planefinder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-
+import reactor.core.publisher.Flux;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import java.io.IOException;
+import java.time.Duration;
 
 @Controller
 public class PlaneController {
@@ -16,7 +18,14 @@ public class PlaneController {
 
     @ResponseBody
     @GetMapping("/aircraft")
-    public Iterable<Aircraft> getCurrentAircraft() throws IOException {
+    public Flux<Aircraft> getCurrentAircraft() throws IOException {
         return pfService.getAircraft();
+    }
+
+    @MessageMapping("acstream")
+    public Flux<Aircraft> getCurrentACStream() throws IOException {
+        return pfService.getAircraft().concatWith(
+                Flux.interval(Duration.ofSeconds(1))
+                        .flatMap(l -> pfService.getAircraft()));
     }
 }
